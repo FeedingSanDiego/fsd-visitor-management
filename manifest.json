@@ -1,0 +1,9 @@
+{
+  "name": "FSD Visitor Management",
+  "short_name": "FSD Visitors",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f7f8f6",
+  "theme_color": "#2f5b24",
+  "icons": []
+}
