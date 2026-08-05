@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#2f5b24" />
+  <title>FSD Visitor Management</title>
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    :root{
+      --green:#2f5b24;
+      --green-dark:#23471b;
+      --green-soft:#eef4ea;
+      --orange:#ef7d00;
+      --orange-dark:#cf6900;
+      --orange-soft:#fff3e4;
+      --ink:#243126;
+      --muted:#6f776f;
+      --line:#dde3dc;
+      --bg:#f7f8f6;
+      --card:#ffffff;
+      --shadow:0 10px 28px rgba(33,58,28,.11);
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink)}
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    .shell{min-height:100vh;display:flex;flex-direction:column}
+    .topbar{
+      background:white;border-bottom:4px solid var(--green);
+      padding:24px clamp(18px,4vw,46px);
+      display:grid;grid-template-columns:auto 1fr auto;gap:28px;align-items:center;
+    }
+    .brand-logo{width:205px;max-width:30vw}
+    .title-wrap{border-left:1px solid var(--line);padding-left:28px}
+    h1{font-size:clamp(1.8rem,4vw,3.2rem);margin:0;color:var(--green);line-height:1.05}
+    .subtitle{margin:10px 0 0;color:#4f5750;font-size:clamp(.95rem,1.6vw,1.2rem)}
+    .clock{
+      min-width:175px;border:1px solid var(--line);border-radius:15px;padding:14px 16px;
+      text-align:center;background:#fbfcfa;
+    }
+    .clock strong{display:block;font-size:1.15rem;color:var(--green)}
+    .clock span{display:block;margin-top:4px;color:var(--muted)}
+    main{width:min(1180px,calc(100% - 32px));margin:36px auto;flex:1}
+    .home-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px}
+    .action-card,.admin-strip,.panel{
+      background:var(--card);border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow)
+    }
+    .action-card{padding:34px;min-height:445px;display:flex;flex-direction:column;align-items:center;text-align:center}
+    .icon-orb{
+      width:135px;height:135px;border-radius:50%;display:grid;place-items:center;
+      font-size:4.2rem;margin-bottom:24px;font-weight:700
+    }
+    .in .icon-orb{background:var(--green-soft);color:var(--green)}
+    .out .icon-orb{background:var(--orange-soft);color:var(--orange)}
+    .action-card h2{font-size:2.3rem;margin:0 0 12px}
+    .action-card p{font-size:1.12rem;color:#535b54;max-width:400px;margin:0 auto 30px;line-height:1.55}
+    .action-card .spacer{flex:1}
+    .wide-btn{
+      width:100%;border:0;border-radius:13px;min-height:68px;color:white;
+      font-size:1.16rem;font-weight:800;letter-spacing:.02em
+    }
+    .btn-green{background:var(--green)} .btn-green:hover{background:var(--green-dark)}
+    .btn-orange{background:var(--orange)} .btn-orange:hover{background:var(--orange-dark)}
+    .admin-strip{
+      margin-top:30px;padding:26px 30px;display:grid;grid-template-columns:auto 1fr auto;gap:22px;align-items:center
+    }
+    .admin-icon{width:72px;height:72px;border-radius:50%;background:#eff1ef;display:grid;place-items:center;font-size:2rem}
+    .admin-copy h3{margin:0 0 7px;color:var(--green);font-size:1.45rem}
+    .admin-copy p{margin:0;color:#5f675f}
+    .outline-btn{
+      background:white;color:var(--green);border:2px solid var(--green);border-radius:12px;
+      padding:15px 22px;font-weight:800
+    }
+    .panel{padding:30px}
+    .panel h2{font-size:2rem;margin:0 0 8px;color:var(--green)}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .full{grid-column:1/-1}
+    label{display:block;font-weight:800;margin-bottom:7px}
+    input,select,textarea{
+      width:100%;min-height:54px;border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;background:white
+    }
+    input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(47,91,36,.12)}
+    .form-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:22px}
+    .btn{border:0;border-radius:12px;padding:14px 20px;min-height:52px;font-weight:800}
+    .btn-secondary{background:#f0f2ef;color:var(--ink)}
+    .success{text-align:center;padding:60px 28px}
+    .success-mark{font-size:4.5rem;color:var(--green)}
+    .hidden{display:none!important}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+    .stat{background:white;border:1px solid var(--line);border-radius:16px;padding:18px}
+    .stat strong{display:block;font-size:2rem;color:var(--green);margin-top:4px}
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px}
+    .toolbar input{flex:1 1 280px}
+    .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:14px}
+    table{width:100%;border-collapse:collapse;min-width:900px;background:white}
+    th,td{padding:13px 12px;border-bottom:1px solid var(--line);text-align:left}
+    th{background:#f2f5f1;color:#667065;font-size:.86rem}
+    .pill{display:inline-block;padding:5px 10px;border-radius:999px;font-size:.8rem;font-weight:800}
+    .onsite{background:#eaf4e6;color:#2c6a23}.checked{background:#eef0ee;color:#687068}.key{background:#fff1df;color:#8a4d00}
+    footer{
+      background:white;border-top:3px solid var(--green);padding:24px 16px 0;text-align:center
+    }
+    footer img{width:190px}
+    footer .tagline{color:var(--green);font-style:italic;margin:10px 0 18px}
+    footer .footer-bar{background:var(--green);color:white;margin:0 -16px;padding:12px 18px;font-size:.9rem}
+    .modal{position:fixed;inset:0;background:rgba(20,31,20,.52);display:grid;place-items:center;padding:18px;z-index:10}
+    .modal-card{width:min(430px,100%);background:white;border-radius:20px;padding:24px;box-shadow:var(--shadow)}
+    @media(max-width:800px){
+      .topbar{grid-template-columns:1fr;text-align:center}
+      .brand-logo{max-width:220px;margin:auto}
+      .title-wrap{border-left:0;border-top:1px solid var(--line);padding:18px 0 0}
+      .clock{justify-self:center}
+      .home-grid,.form-grid{grid-template-columns:1fr}
+      .admin-strip{grid-template-columns:1fr;text-align:center}
+      .admin-icon{margin:auto}
+      .stats{grid-template-columns:1fr 1fr}
+    }
+  </style>
+</head>
+<body>
+<div class="shell">
+  <header class="topbar">
+    <img src="fsd-logo.png" alt="Feeding San Diego" class="brand-logo">
+    <div class="title-wrap">
+      <h1>FSD Visitor Management</h1>
+      <p class="subtitle">Welcome! Please check in or out using the options below.</p>
+    </div>
+    <div class="clock">
+      <strong id="timeNow">--:--</strong>
+      <span id="dateNow">Loading...</span>
+    </div>
+  </header>
+
+  <main>
+    <section id="homeView">
+      <div class="home-grid">
+        <article class="action-card in">
+          <div class="icon-orb">↪</div>
+          <h2>Check In</h2>
+          <p>Register your visit and check in to the facility.</p>
+          <div class="spacer"></div>
+          <button class="wide-btn btn-green" id="openCheckIn">CHECK IN&nbsp;&nbsp;›</button>
+        </article>
+
+        <article class="action-card out">
+          <div class="icon-orb">↩</div>
+          <h2>Check Out</h2>
+          <p>Check out when you’re leaving the facility.</p>
+          <div class="spacer"></div>
+          <button class="wide-btn btn-orange" id="openCheckOut">CHECK OUT&nbsp;&nbsp;›</button>
+        </article>
+      </div>
+
+      <section class="admin-strip">
+        <div class="admin-icon">▥</div>
+        <div class="admin-copy">
+          <h3>Admin Access</h3>
+          <p>View visitor logs, keycard status, and export reports.</p>
+        </div>
+        <button class="outline-btn" id="adminBtn">🔒&nbsp; ADMIN LOGIN</button>
+      </section>
+    </section>
+
+    <section id="checkInView" class="panel hidden">
+      <h2>Visitor Check-In</h2>
+      <p class="subtitle">Please complete the information below.</p>
+      <form id="checkInForm">
+        <div class="form-grid">
+          <div><label for="visitorName">Full name *</label><input id="visitorName" required></div>
+          <div><label for="company">Company or organization</label><input id="company"></div>
+          <div><label for="host">Who are you visiting?</label><input id="host"></div>
+          <div>
+            <label for="purpose">Purpose of visit</label>
+            <select id="purpose">
+              <option value="">Select one</option>
+              <option>Vendor</option>
+              <option>Meeting</option>
+              <option>Training</option>
+              <option>Interview</option>
+              <option>Employee</option>
+            </select>
+          </div>
+          <div>
+            <label for="needsKeycard">Checking out a keycard? *</label>
+            <select id="needsKeycard" required><option value="">Select one</option><option>No</option><option>Yes</option></select>
+          </div>
+          <div id="keycardWrap" class="hidden">
+            <label for="keycardNumber">Keycard number *</label>
+            <select id="keycardNumber">
+              <option value="">Select a keycard</option>
+              <option>Staff 1</option>
+              <option>Staff 2</option>
+              <option>Vendor 1</option>
+              <option>Vendor 2</option>
+              <option>Vendor 3</option>
+              <option>Vendor 4</option>
+              <option>Vendor 5</option>
+              <option>9401 Building</option>
+            </select>
+          </div>
+          <div class="full"><label for="notes">Notes</label><textarea id="notes" rows="3"></textarea></div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary cancel">Cancel</button>
+          <button class="btn btn-green" type="submit">Complete Check-In</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="checkOutView" class="panel hidden">
+      <h2>Visitor Check-Out</h2>
+      <p class="subtitle">Select your name from visitors currently onsite.</p>
+      <form id="checkOutForm">
+        <div class="form-grid">
+          <div class="full">
+            <label for="activeVisitor">Visitor *</label>
+            <select id="activeVisitor" required></select>
+          </div>
+          <div id="returnWrap" class="hidden">
+            <label for="keyReturned">Was the keycard returned? *</label>
+            <select id="keyReturned"><option>Yes</option><option>No</option></select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary cancel">Cancel</button>
+          <button class="btn btn-orange" type="submit">Complete Check-Out</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="successView" class="panel success hidden">
+      <div class="success-mark">✓</div>
+      <h2 id="successTitle">You’re checked in!</h2>
+      <p id="successText">Thank you. Your visit has been recorded.</p>
+      <button class="btn btn-green" id="returnHome">Return Home</button>
+    </section>
+
+    <section id="adminView" class="hidden">
+      <div class="stats">
+        <div class="stat">Currently onsite<strong id="statOnsite">0</strong></div>
+        <div class="stat">Visits today<strong id="statToday">0</strong></div>
+        <div class="stat">Keycards out<strong id="statKeys">0</strong></div>
+        <div class="stat">Total records<strong id="statTotal">0</strong></div>
+      </div>
+      <div class="panel">
+        <div class="toolbar">
+          <input id="searchRecords" placeholder="Search visitor, host, company, or keycard">
+          <button class="btn btn-secondary" id="exportBtn">Export CSV</button>
+          <button class="btn btn-secondary" id="adminHome">Home</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Visitor</th><th>Host</th><th>Purpose</th><th>Check-in</th><th>Check-out</th><th>Keycard</th><th>Returned</th><th>Status</th></tr>
+            </thead>
+            <tbody id="recordsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <img src="fsd-logo.png" alt="Feeding San Diego">
+    <div class="tagline">Ending hunger through food rescue today, building a hunger-free tomorrow.</div>
+    <div class="footer-bar">Your safety is important to us. All visitors must check in.</div>
+  </footer>
+</div>
+
+<div id="pinModal" class="modal hidden">
+  <div class="modal-card">
+    <h2>Admin Access</h2>
+    <p>Enter the administrator PIN.</p>
+    <input id="pinInput" type="password" inputmode="numeric" placeholder="PIN">
+    <p style="color:var(--muted);font-size:.9rem">Prototype PIN: <strong>2468</strong></p>
+    <div class="form-actions">
+      <button class="btn btn-secondary" id="closePin">Cancel</button>
+      <button class="btn btn-green" id="submitPin">Continue</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY="fsd-visitor-management-v2";
+  const ADMIN_PIN="2468";
+  let records=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");
+  const $=id=>document.getElementById(id);
+  const views=["homeView","checkInView","checkOutView","successView","adminView"];
+
+  function updateClock(){
+    const now=new Date();
+    $("timeNow").textContent=now.toLocaleTimeString([],{hour:"numeric",minute:"2-digit"});
+    $("dateNow").textContent=now.toLocaleDateString([],{month:"long",day:"numeric",year:"numeric"});
+  }
+  updateClock(); setInterval(updateClock,30000);
+
+  function show(id){
+    views.forEach(v=>$(v).classList.toggle("hidden",v!==id));
+    if(id==="checkOutView") populateActive();
+    if(id==="adminView") renderAdmin();
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+  function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(records))}
+  function activeRecords(){return records.filter(r=>!r.checkOut)}
+  function escapeHtml(s=""){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+  function formatDate(iso){return iso?new Intl.DateTimeFormat(undefined,{month:"short",day:"numeric",year:"numeric",hour:"numeric",minute:"2-digit"}).format(new Date(iso)):"—"}
+  function dayKey(d=new Date()){return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`}
+
+  $("openCheckIn").onclick=()=>show("checkInView");
+  $("openCheckOut").onclick=()=>show("checkOutView");
+  $("returnHome").onclick=()=>show("homeView");
+  $("adminHome").onclick=()=>show("homeView");
+  document.querySelectorAll(".cancel").forEach(b=>b.onclick=()=>show("homeView"));
+
+  $("needsKeycard").onchange=e=>{
+    const yes=e.target.value==="Yes";
+    $("keycardWrap").classList.toggle("hidden",!yes);
+    $("keycardNumber").required=yes;
+    if(!yes)$("keycardNumber").value="";
+  };
+
+  $("checkInForm").onsubmit=e=>{
+    e.preventDefault();
+    records.unshift({
+      id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),
+      visitorName:$("visitorName").value.trim(),
+      company:$("company").value.trim(),
+      host:$("host").value.trim(),
+      purpose:$("purpose").value,
+      needsKeycard:$("needsKeycard").value,
+      keycardNumber:$("keycardNumber").value.trim(),
+      notes:$("notes").value.trim(),
+      checkIn:new Date().toISOString(),
+      checkOut:"",
+      keyReturned:""
+    });
+    save();
+    e.target.reset();
+    $("keycardWrap").classList.add("hidden");
+    $("successTitle").textContent="You’re checked in!";
+    $("successText").textContent="Thank you. Your visit has been recorded.";
+    show("successView");
+  };
+
+  function populateActive(){
+    const active=activeRecords();
+    $("activeVisitor").innerHTML=active.length
+      ?'<option value="">Select your name</option>'+active.map(r=>`<option value="${r.id}">${escapeHtml(r.visitorName)}${r.host ? ` — visiting ${escapeHtml(r.host)}` : ""}</option>`).join("")
+      :'<option value="">No visitors are currently checked in</option>';
+    $("activeVisitor").disabled=!active.length;
+    $("returnWrap").classList.add("hidden");
+  }
+
+  $("activeVisitor").onchange=e=>{
+    const r=records.find(x=>x.id===e.target.value);
+    $("returnWrap").classList.toggle("hidden",!(r&&r.needsKeycard==="Yes"));
+  };
+
+  $("checkOutForm").onsubmit=e=>{
+    e.preventDefault();
+    const r=records.find(x=>x.id===$("activeVisitor").value);
+    if(!r)return;
+    r.checkOut=new Date().toISOString();
+    r.keyReturned=r.needsKeycard==="Yes"?$("keyReturned").value:"N/A";
+    save();
+    $("successTitle").textContent="You’re checked out!";
+    $("successText").textContent=r.needsKeycard==="Yes"&&r.keyReturned==="No"
+      ?"Your visit is closed, but please return the keycard to the front desk."
+      :"Thank you for visiting. Have a great day!";
+    show("successView");
+  };
+
+  $("adminBtn").onclick=()=>{
+    $("pinInput").value="";
+    $("pinModal").classList.remove("hidden");
+    $("pinInput").focus();
+  };
+  $("closePin").onclick=()=>$("pinModal").classList.add("hidden");
+  $("submitPin").onclick=()=>{
+    if($("pinInput").value===ADMIN_PIN){
+      $("pinModal").classList.add("hidden");
+      show("adminView");
+    }else alert("Incorrect PIN.");
+  };
+  $("pinInput").addEventListener("keydown",e=>{if(e.key==="Enter")$("submitPin").click()});
+
+  function renderAdmin(){
+    const q=$("searchRecords").value.toLowerCase().trim();
+    const filtered=records.filter(r=>[r.visitorName,r.company,r.host,r.purpose,r.keycardNumber].join(" ").toLowerCase().includes(q));
+    $("recordsBody").innerHTML=filtered.length?filtered.map(r=>`
+      <tr>
+        <td><strong>${escapeHtml(r.visitorName)}</strong><br><small>${escapeHtml(r.company||"")}</small></td>
+        <td>${escapeHtml(r.host)}</td><td>${escapeHtml(r.purpose)}</td>
+        <td>${formatDate(r.checkIn)}</td><td>${formatDate(r.checkOut)}</td>
+        <td>${r.needsKeycard==="Yes"?`<span class="pill key">${escapeHtml(r.keycardNumber||"Yes")}</span>`:"—"}</td>
+        <td>${escapeHtml(r.keyReturned||"—")}</td>
+        <td><span class="pill ${r.checkOut?"checked":"onsite"}">${r.checkOut?"Checked out":"Onsite"}</span></td>
+      </tr>`).join(""):'<tr><td colspan="8">No records found.</td></tr>';
+    const today=dayKey();
+    $("statOnsite").textContent=activeRecords().length;
+    $("statToday").textContent=records.filter(r=>dayKey(new Date(r.checkIn))===today).length;
+    $("statKeys").textContent=records.filter(r=>!r.checkOut&&r.needsKeycard==="Yes").length;
+    $("statTotal").textContent=records.length;
+  }
+  $("searchRecords").oninput=renderAdmin;
+
+  $("exportBtn").onclick=()=>{
+    const headers=["Visitor Name","Company","Host","Purpose","Check In","Check Out","Keycard Needed","Keycard Number","Keycard Returned","Notes"];
+    const rows=records.map(r=>[r.visitorName,r.company,r.host,r.purpose,r.checkIn,r.checkOut,r.needsKeycard,r.keycardNumber,r.keyReturned,r.notes]);
+    const csv=[headers,...rows].map(row=>row.map(v=>`"${String(v||"").replaceAll('"','""')}"`).join(",")).join("\n");
+    const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;a.download=`fsd-visitor-records-${new Date().toISOString().slice(0,10)}.csv`;a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  if("serviceWorker"in navigator)navigator.serviceWorker.register("service-worker.js");
+</script>
+</body>
+</html>
